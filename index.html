@@ -556,22 +556,29 @@
     let filteredEmployeesData = [];
     let pendingUpdatesData = [];
 
-  
+  async function apiCall(action, payload = {}) {
 
-      const response = await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify(Object.assign({ action }, payload)),
-        redirect: "follow"
-      });
+    const response = await fetch(API_URL,{
+        method:"POST",
+        body:JSON.stringify(
+            Object.assign(
+                {action},
+                payload
+            )
+        ),
+        redirect:"follow"
+    });
 
-      const text = await response.text();
-      try {
+    const text = await response.text();
+
+    try{
         return JSON.parse(text);
-      } catch (e) {
-        throw new Error("استجابة الخادم ليست JSON صالحة. تأكد من نشر Apps Script كرابط Web App بصلاحية Anyone. النص المستلم: " + text.slice(0, 180));
-      }
+    }
+    catch(e){
+        throw new Error(text);
     }
 
+}
     document.addEventListener("DOMContentLoaded", function() {
       document.getElementById('loginPage').classList.remove('hidden');
       document.getElementById('mainDashboard').classList.add('hidden');
