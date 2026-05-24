@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام إدارة بيانات الموظفين وحالة العمل</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #f4f6f9;
+    }
+    .custom-spinner {
+      border: 4px solid #f3f4f6;
+      border-top: 4px solid #0284c7;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .active-tab {
+      border-bottom: 4px solid #059669;
+      color: #059669;
+      font-weight: 700;
+      background-color: #f0fdf4;
+    }
+  </style>
+</head>
+<body class="text-gray-800 antialiased">
+
+  <div id="globalLoader" class="fixed inset-0 bg-slate-900 bg-opacity-60 flex items-center justify-center z-50 hidden">
+    <div class="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center max-w-xs w-full mx-4">
+      <div class="custom-spinner mb-4"></div>
+      <p class="text-xs font-bold text-gray-600 text-center" id="loaderText">جاري الاتصال بقاعدة البيانات وحفظ مصفوفة العمل المستدامة...</p>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-5 left-5 px-6 py-3 rounded-xl shadow-2xl text-white text-xs font-bold transition-all duration-500 opacity-0 z-50 hidden"></div>
+
+  <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
+    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4">
+      <div class="flex justify-between items-center mb-4 border-b pb-2">
+        <h3 class="text-sm font-bold text-gray-700"><i class="fa-solid fa-lock-open text-sky-600 ml-1"></i> تغيير كلمة المرور الشخصية</h3>
+        <button onclick="toggleModal('passwordModal', false)" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">كلمة المرور الحالية</label>
+          <input type="password" id="oldPass" class="w-full border rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">كلمة المرور الجديدة</label>
+          <input type="password" id="newPass" class="w-full border rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500">
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-2 text-xs">
+        <button onclick="toggleModal('passwordModal', false)" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300">إلغاء</button>
+        <button onclick="submitPasswordChange()" class="bg-sky-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-sky-700 shadow">تحديث الآن</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loginPage" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-sky-900 to-emerald-950 px-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-100">
+      <div class="text-center mb-6">
+        <div class="bg-sky-50 text-sky-600 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
+          <i class="fa-solid fa-shield-user"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-800">منظومة متابعة الموظفين وحالة العمل</h2>
+        <p class="text-[11px] text-gray-400 mt-1">سجل دخولك لتعديل مسارات العمل واستعراض التقارير</p>
+      </div>
+      
+      <form id="frmLogin" onsubmit="handleLogin(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">البريد الإلكتروني أو الرقم الوظيفي</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400"><i class="fa-solid fa-id-card-clip"></i></span>
+            <input type="text" id="loginKey" required class="w-full border rounded-xl pr-9 pl-3 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="أدخل رقم الموظف أو البريد">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">كلمة المرور السرية</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400"><i class="fa-solid fa-key"></i></span>
+            <input type="password" id="loginPassword" required class="w-full border rounded-xl pr-9 pl-3 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="••••••••">
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-right-to-bracket"></i> التحقق وتسجيل الدخول
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="mainDashboard" class="min-h-screen flex flex-col hidden">
+    
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+          <div class="bg-gradient-to-tr from-sky-600 to-emerald-600 text-white p-2.5 rounded-xl text-lg shadow">
+            <i class="fa-solid fa-user-gear"></i>
+          </div>
+          <div>
+            <h1 class="text-sm font-bold text-gray-800 leading-tight" id="lblUserHeaderName">جاري جلب البيانات...</h1>
+            <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold inline-block mt-0.5" id="lblUserHeaderRole">-</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs">
+          <button onclick="toggleModal('passwordModal', true)" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-gray-600 font-bold flex items-center gap-1 transition-colors">
+            <i class="fa-solid fa-lock-open"></i> كلمة المرور
+          </button>
+          <button onclick="handleLogout()" class="bg-red-50 hover:bg-red-100 px-3 py-2 rounded-lg text-red-600 font-bold flex items-center gap-1 transition-colors">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> خروج آمن
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div id="statsPanel" class="max-w-7xl w-full mx-auto px-4 pt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 hidden">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+        <div class="p-3 rounded-xl bg-blue-50 text-blue-600 text-lg"><i class="fa-solid fa-users"></i></div>
+        <div><p class="text-[10px] text-gray-400 font-bold">إجمالي الموظفين</p><h3 class="text-base font-bold text-gray-800" id="statTotal">0</h3></div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+        <div class="p-3 rounded-xl bg-emerald-50 text-emerald-600 text-lg"><i class="fa-solid fa-location-crosshairs"></i></div>
+        <div><p class="text-[10px] text-gray-400 font-bold">داخل قطاع غزة</p><h3 class="text-base font-bold text-emerald-600" id="statInside">0</h3></div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+        <div class="p-3 rounded-xl bg-amber-50 text-amber-600 text-lg"><i class="fa-solid fa-plane-departure"></i></div>
+        <div><p class="text-[10px] text-gray-400 font-bold">متواجد بالخارج</p><h3 class="text-base font-bold text-amber-500" id="statOutside">0</h3></div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+        <div class="p-3 rounded-xl bg-red-50 text-red-600 text-lg"><i class="fa-solid fa-truck-medical"></i></div>
+        <div><p class="text-[10px] text-gray-400 font-bold">كادر الطوارئ</p><h3 class="text-base font-bold text-red-500" id="statEmergency">0</h3></div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+        <div class="p-3 rounded-xl bg-indigo-50 text-indigo-600 text-lg"><i class="fa-solid fa-display"></i></div>
+        <div><p class="text-[10px] text-gray-400 font-bold">التعليم الإلكتروني</p><h3 class="text-base font-bold text-indigo-600" id="statOnline">0</h3></div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+        <div class="p-3 rounded-xl bg-purple-50 text-purple-600 text-lg"><i class="fa-solid fa-graduation-cap"></i></div>
+        <div><p class="text-[10px] text-gray-400 font-bold">التعليم الوجاهي</p><h3 class="text-base font-bold text-purple-600" id="statFace">0</h3></div>
+      </div>
+    </div>
+
+    <div class="max-w-7xl w-full mx-auto px-4 pt-4">
+      <div class="bg-slate-800 text-white rounded-xl p-4 shadow flex flex-wrap justify-between items-center gap-4 border border-slate-700">
+        <div class="flex items-center gap-3.5">
+          <div class="bg-white bg-opacity-10 p-2.5 rounded-xl text-lg text-sky-400"><i class="fa-solid fa-address-card"></i></div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-x-6 gap-y-1 text-[11px]">
+            <div><span class="opacity-50 block">الاسم:</span> <strong id="quickName" class="text-xs text-white">-</strong></div>
+            <div><span class="opacity-50 block">الوظيفة:</span> <strong id="quickTitle" class="text-white">-</strong></div>
+            <div><span class="opacity-50 block">المنطقة التعليمية:</span> <strong id="quickArea" class="text-white">-</strong></div>
+            <div><span class="opacity-50 block">المدرسة الحالية:</span> <strong id="quickSchool" class="text-white">-</strong></div>
+            <div><span class="opacity-50 block">مكان التواجد:</span> <strong id="quickGazaStatus" class="text-amber-300 font-bold">-</strong></div>
+          </div>
+        </div>
+        <div class="text-left text-[10px]">
+          <span class="opacity-40 block">آخر مزامنة للتعديل</span>
+          <span id="quickLastUpdate" class="font-bold text-emerald-400 text-xs">-</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="max-w-7xl w-full mx-auto px-4 pt-5">
+      <div class="flex border-b border-gray-200 bg-white rounded-t-xl px-2 shadow-sm overflow-x-auto whitespace-nowrap">
+        <button onclick="switchTab('tabPersonalInfo')" id="btn-tabPersonalInfo" class="px-5 py-3 text-xs font-bold text-gray-500 hover:text-emerald-600 border-b-2 border-transparent transition-all flex items-center gap-1.5 active-tab">
+          <i class="fa-solid fa-user-check"></i> البيانات الشخصية والتواصل
+        </button>
+        <button onclick="switchTab('tabWorkStatus')" id="btn-tabWorkStatus" class="px-5 py-3 text-xs font-bold text-gray-500 hover:text-emerald-600 border-b-2 border-transparent transition-all flex items-center gap-1.5">
+          <i class="fa-solid fa-network-wired"></i> حالة العمل
+        </button>
+        <button onclick="switchTab('tabReports')" id="btn-tabReports" class="px-5 py-3 text-xs font-bold text-gray-500 hover:text-emerald-600 border-b-2 border-transparent transition-all flex items-center gap-1.5 hidden">
+          <i class="fa-solid fa-chart-line"></i> تقارير الموظفين
+        </button>
+        <button onclick="switchTab('tabApprovals')" id="btn-tabApprovals" class="px-5 py-3 text-xs font-bold text-gray-500 hover:text-emerald-600 border-b-2 border-transparent transition-all flex items-center gap-1.5 hidden">
+          <i class="fa-solid fa-user-check"></i> اعتماد التعديلات
+          <span id="pendingCountBadge" class="hidden bg-red-600 text-white rounded-full px-1.5 py-0.5 text-[9px]">0</span>
+        </button>
+      </div>
+    </nav>
+
+    <main class="max-w-7xl w-full mx-auto px-4 pb-12 flex-1">
+      <div class="bg-white p-6 rounded-b-xl shadow-sm border border-t-0 border-gray-200">
+        
+        <div id="tabPersonalInfo" class="tab-content space-y-6">
+          <div>
+            <div class="flex items-center gap-2 mb-4 border-r-4 border-sky-600 pr-2.5">
+              <h3 class="text-sm font-bold text-gray-800">بيانات العمل المعتمدة (للتعديل تواصل مع مدير المنطقة)</h3>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="cardsGridPersonal">
+              </div>
+          </div>
+          
+          <hr class="border-gray-100 my-4">
+          
+          <div>
+            <div class="flex justify-between items-center mb-4">
+              <div class="flex items-center gap-2 border-r-4 border-emerald-600 pr-2.5">
+                <h3 class="text-sm font-bold text-gray-800">تفاصيل العناوين والاتصال الحالية (يمكن تعديل البيانات)</h3>
+              </div>
+              <button onclick="openEditAddressModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-user-pen"></i> تعديل تفاصيل التواصل
+              </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+              <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <span class="text-[10px] text-gray-400 block mb-1">المحافظة المقيم بها حالياً</span>
+                <div class="flex items-center gap-1.5 font-bold text-gray-700"><i class="fa-solid fa-map-location text-emerald-600"></i> <span id="lblGov">-</span></div>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <span class="text-[10px] text-gray-400 block mb-1">العنوان السكني الحالي بالتفصيل</span>
+                <div class="flex items-center gap-1.5 font-bold text-gray-700"><i class="fa-solid fa-house-user text-emerald-600"></i> <span id="lblAddress">-</span></div>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <span class="text-[10px] text-gray-400 block mb-1">رقم الجوال النشط للاتصال</span>
+                <div class="flex items-center gap-1.5 font-bold text-gray-700" dir="ltr"><i class="fa-solid fa-phone text-emerald-600"></i> <span id="lblMobile">-</span></div>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <span class="text-[10px] text-gray-400 block mb-1">حساب الواتساب</span>
+                <div class="flex items-center gap-1.5 font-bold text-emerald-700" dir="ltr"><i class="fa-brands fa-whatsapp text-emerald-600 text-sm"></i> <span id="lblHardcodedWhatsapp">-</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="editAddressModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
+            <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4 text-xs">
+              <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="text-sm font-bold text-gray-700"><i class="fa-solid fa-edit text-emerald-600 ml-1"></i> تحديث بيانات السكن وعناوين الاتصال الطارئة</h3>
+                <button type="button" onclick="toggleModal('editAddressModal', false)" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+              </div>
+              <form id="frmEditAddress" onsubmit="submitAddressUpdate(event)" class="space-y-4">
+                <div>
+                  <label class="block font-bold text-gray-600 mb-1">المحافظة الحالية المنتقل إليها</label>
+                  <select id="inpGov" required class="w-full border rounded-lg px-3 py-2 bg-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="خانيونس">خانيونس</option>
+                    <option value="رفح">رفح</option>
+                    <option value="دير البلح">دير البلح</option>
+                    <option value="النصيرات">النصيرات</option>
+                    <option value="غزة">غزة</option>
+                    <option value="الشمال">الشمال</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-bold text-gray-600 mb-1">العنوان السكني التفصيلي الحالي</label>
+                  <input type="text" id="inpAddress" required class="w-full border rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">رقم الجوال الفعال</label>
+                    <input type="text" id="inpMobile" required class="w-full border rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="059xxxxxxx">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">رقم الواتساب الرسمي المسبوق بـ +97</label>
+                    <input type="text" id="inpWhatsapp" required class="w-full border rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="+97259xxxxxxx">
+                  </div>
+                </div>
+                <div class="mt-6 flex justify-end gap-2 pt-2 border-t">
+                  <button type="button" onclick="toggleModal('editAddressModal', false)" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold hover:bg-gray-300">إلغاء</button>
+                  <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-emerald-700 shadow">حفظ ومزامنة وتعديل البيانات</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+     <div id="tabWorkStatus" class="tab-content space-y-6 hidden">
+          <div class="border-r-4 border-amber-500 pr-2.5 mb-4">
+            <h3 class="text-sm font-bold text-gray-800">تحديث حالة العمل</h3>
+          </div>
+
+          <form id="frmWorkStatus" onsubmit="submitWorkStatusUpdate(event)" class="space-y-4 text-xs">
+            <div class="bg-red-50 bg-opacity-50 p-4 rounded-xl border border-red-100 grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div class="md:col-span-4 font-bold text-red-800 text-xs flex items-center gap-1.5"><i class="fa-solid fa-truck-medical"></i> أولاً: نطاق العمل في الطوارئ</div>
+              <div>
+                <label class="block font-bold text-gray-600 mb-1">هل يعمل حالياً في الطوارئ؟</label>
+                <select id="wEmergWorking" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  <option value="نعم">نعم</option>
+                  <option value="لا">لا</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-gray-600 mb-1">المهنة / المسمى بالطوارئ</label>
+                <input type="text" id="wEmergJob" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+              </div>
+              <div>
+                <label class="block font-bold text-gray-600 mb-1">مكان العمل في الطوارئ </label>
+                <input type="text" id="wEmergPlace" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+              </div>
+              <div>
+                <label class="block font-bold text-gray-600 mb-1">منطقة عمل الطوارئ</label>
+                <select id="wEmergArea" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  <option value="Gaza">Gaza</option>
+                  <option value="Middle">Middle</option>
+                  <option value="Khanyounis">Khanyounis</option>
+                  <option value="North Gaza">North Gaza</option>
+                  <option value="Rafah">Rafah</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="bg-indigo-50 bg-opacity-50 p-4 rounded-xl border border-indigo-100 grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div class="md:col-span-4 font-bold text-indigo-800 text-xs flex items-center gap-1.5"><i class="fa-solid fa-display"></i> ثانياً: نطاق التعليم الإلكتروني - عن بعد</div>
+              <div>
+                <label class="block font-bold text-gray-600 mb-1">هل يعمل في التعليم الإلكتروني؟</label>
+                <select id="wOnlineWorking" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  <option value="نعم">نعم</option>
+                  <option value="لا">لا</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-gray-600 mb-1">المهنة في التعليم الإلكتروني</label>
+                <input type="text" id="wOnlineJob" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+              </div>
+              <div>
+                <label class="block font-bold text-gray-600 mb-1">مكان العمل في التعليم الإلكتروني</label>
+                <input type="text" id="wOnlinePlace" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+              </div>
+              <div>
+                <label class="block font-bold text-gray-600 mb-1">منطقة العمل في التعليم الإلكتروني </label>
+                <select id="wOnlineArea" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  <option value="East Gaza">East Gaza</option>
+                  <option value="West Gaza">West Gaza</option>
+                  <option value="South Gaza">South Gaza</option>                                    
+                  <option value="East Middle">East Middle</option>
+                  <option value="West Middle">West Middle</option>                  
+                  <option value="West Khanyounis">West Khanyounis</option>
+                  <option value="East Khanyounis">East Khanyounis</option>
+                  <option value="South Rafah">South Rafah</option>
+                  <option value="Nourth Rafah">Nourth Rafah</option>
+                  <option value="Jabalia">Jabalia</option>
+                  <option value="B-Hanon& B-Lahia">B-Hanon& B-Lahia</option>
+
+                  
+                </select>
+              </div>
+            </div>
+
+            <div class="bg-purple-50 bg-opacity-50 p-4 rounded-xl border border-purple-100 grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div class="md:col-span-4 font-bold text-purple-800 text-xs flex items-center gap-1.5"><i class="fa-solid fa-graduation-cap"></i> ثالثاً: نطاق التعليم الوجاهي - غير الرسمي</div>
+              <div>
+                <label class="block font-bold text-gray-600 mb-1">هل يعمل في التعليم الوجاهي؟</label>
+                <select id="wFaceWorking" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  <option value="نعم">نعم</option>
+                  <option value="لا">لا</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-gray-600 mb-1">المهنة في التعليم الوجاهي - غير الرسمي</label>
+                <input type="text" id="wFaceJob" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+              </div>
+              <div>
+                <label class="block font-bold text-gray-600 mb-1">مكان العمل في التعليم الوجاهي - غير الرسمي </label>
+                <input type="text" id="wFacePlace" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+              </div>
+              <div>
+                <label class="block font-bold text-gray-600 mb-1">منطقة العمل في التعليم الوجاهي </label>
+                <select id="wFaceArea" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  <option value="East Gaza">East Gaza</option>
+                  <option value="East Middle">East Middle</option>
+                  <option value="West Khanyounis">West Khanyounis</option>
+                  <option value="South Gaza">South Gaza</option>
+                  <option value="Jabalia">Jabalia</option>
+                  <option value="West Gaza">West Gaza</option>
+                  <option value="West Middle">West Middle</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-gray-200">
+              <label class="block font-bold text-gray-700 mb-1"><i class="fa-solid fa-comment-medical text-gray-400"></i> رابعاً: ملاحظات إضافية</label>
+              <textarea id="wNotes" rows="2" class="w-full border rounded-lg p-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="ادخل ملاحظاتك..."></textarea>
+            </div>
+
+            <div class="flex justify-end">
+              <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-6 py-2 rounded-xl shadow transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-cloud-arrow-up"></i> حفظ تعديلات حالة العمل
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div id="tabApprovals" class="tab-content space-y-4 hidden">
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs flex items-start gap-2">
+            <i class="fa-solid fa-circle-info text-amber-600 mt-0.5"></i>
+            <div>
+              <strong class="block text-amber-800 mb-1">طلبات تعديل بيانات الموظفين بانتظار الاعتماد</strong>
+              <span class="text-amber-700">أي تعديل يرسله الموظف لا ينعكس على البيانات الأصلية إلا بعد اعتماد المدير أو الأدمن.</span>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div class="p-3.5 bg-gray-50 border-b flex justify-between items-center flex-wrap gap-2 text-xs">
+              <span class="font-bold text-gray-700"><i class="fa-solid fa-list-check text-emerald-600 ml-1"></i> قائمة طلبات التعديل المعلقة</span>
+              <button onclick="loadPendingUpdates()" class="bg-sky-600 hover:bg-sky-700 text-white font-bold px-3 py-1.5 rounded-lg shadow transition-all flex items-center gap-1">
+                <i class="fa-solid fa-rotate"></i> تحديث الطلبات
+              </button>
+            </div>
+            <div class="overflow-x-auto w-full">
+              <table class="min-w-full text-right text-xs divide-y divide-gray-200">
+                <thead class="bg-slate-50 text-gray-600 font-bold">
+                  <tr>
+                    <th class="p-3">رقم الطلب</th>
+                    <th class="p-3">الموظف</th>
+                    <th class="p-3">المنطقة</th>
+                    <th class="p-3">نوع التعديل</th>
+                    <th class="p-3">البيانات المقترحة</th>
+                    <th class="p-3">تاريخ الطلب</th>
+                    <th class="p-3 text-center">الإجراء</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyApprovals" class="divide-y text-gray-700 font-medium">
+                  <tr><td colspan="7" class="p-6 text-center text-gray-400">لا توجد طلبات محملة حالياً.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="tabReports" class="tab-content space-y-4 hidden">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3 shadow-inner text-xs">
+            <div class="font-bold text-gray-700 flex items-center gap-1"><i class="fa-solid fa-filter text-sky-600"></i> البحث والفلترة </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+
+              <div>
+                <label class="block text-gray-500 font-semibold mb-1">البحث بالرقم الوظيفي</label>
+                <input type="text" id="filterEmpNo" class="w-full border rounded-lg p-2 bg-white text-xs" placeholder="مثال: 1001">
+              </div>
+              
+              <div>
+                <label class="block text-gray-500 font-semibold mb-1">المنطقة التعليمية (Area/Unit)</label>
+                <select id="filterArea" onchange="updateSchoolFilterOptions()" class="w-full border rounded-lg p-2 bg-white text-xs font-bold text-slate-700">
+                  <option value="">الكل</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-gray-500 font-semibold mb-1">المدرسة (School Name)</label>
+                <select id="filterSchool" class="w-full border rounded-lg p-2 bg-white text-xs font-bold text-slate-700">
+                  <option value="">الكل (اختر المنطقة أولاً)</option>
+                </select>
+              </div>
+
+
+
+
+              <div>
+                <label class="block text-gray-500 font-semibold mb-1">المسمى الوظيفي (Title)</label>
+                <select id="filterTitle" class="w-full border rounded-lg p-2 bg-white text-xs font-bold text-slate-700">
+                  <option value="">الكل</option>
+                </select>
+              </div>
+
+
+              
+              <div>
+                <label class="block text-gray-500 font-semibold mb-1">حالة الوجود بغزة</label>
+                <select id="filterGaza" class="w-full border rounded-lg p-2 bg-white text-xs">
+                  <option value="">الكل</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-gray-500 font-semibold mb-1">محافظة السكن الحالية</label>
+                <select id="filterGovernorate" class="w-full border rounded-lg p-2 bg-white text-xs">
+                  <option value="">الكل</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-gray-500 font-semibold mb-1">تصفية حسب مسار حالة العمل</label>
+                <select id="filterWorkTrack" class="w-full border rounded-lg p-2 bg-white text-xs">
+                  <option value="">الكل</option>
+                  <option value="emergency">يعمل في الطوارئ </option>
+                  <option value="online">يعمل في التعليم الإلكتروني</option>
+                  <option value="face">يعمل في التعليم الوجاهي</option>
+                </select>
+              </div>
+              <div class="flex items-end gap-2">
+                <button onclick="applyFilters()" class="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-1 shadow">
+                  <i class="fa-solid fa-magnifying-glass"></i> بحث
+                </button>
+                <button onclick="clearFilters()" class="bg-gray-200 hover:bg-gray-300 text-gray-600 font-bold py-2 px-3 rounded-lg transition-all" title="إعادة التعيين ">
+                  <i class="fa-solid fa-rotate-left"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div class="p-3.5 bg-gray-50 border-b flex justify-between items-center flex-wrap gap-2 text-xs">
+              <span class="font-bold text-gray-700"><i class="fa-solid fa-list-check text-sky-600 ml-1"></i> قائمة الموظفين المطابقة للبحث</span>
+              <button onclick="exportToExcel()" id="btnExportExcel" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg shadow transition-all flex items-center gap-1 hidden">
+                <i class="fa-solid fa-file-excel text-sm"></i> تصدير لملف Excel (.xlsx)
+              </button>
+            </div>
+            <div class="overflow-x-auto w-full">
+              <table class="min-w-full text-right text-xs divide-y divide-gray-200" id="tableReportMain">
+                <thead class="bg-slate-50 text-gray-600 font-bold">
+                  <tr>
+                      <th class="p-3 cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable('Emp No')">الرقم <span id="icon-Emp No"></span></th>
+                      <th class="p-3 cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable('Emp Name')">اسم الموظف <span id="icon-Emp Name"></span></th>
+                      <th class="p-3 cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable('Title')">الوظيفة <span id="icon-Title"></span></th>
+                      <th class="p-3 cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable('Area/Unit')">المنطقة <span id="icon-Area/Unit"></span></th>
+                      <th class="p-3 cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable('School Name')">المدرسة <span id="icon-School Name"></span></th>
+                      <th class="p-3 cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable('Inside/Outside Gaza')">حالة الوجود <span id="icon-Inside/Outside Gaza"></span></th>
+                      <th class="p-3 text-center cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable('Emergency Working')">الطوارئ <span id="icon-Emergency Working"></span></th>
+                      <th class="p-3 text-center cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable('Online Working')">الإلكتروني <span id="icon-Online Working"></span></th>
+                      <th class="p-3 text-center cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable('Face Working')">الوجاهي <span id="icon-Face Working"></span></th>
+                      <th class="p-3 cursor-pointer hover:bg-slate-200 transition select-none" onclick="sortTable('Last Update')">آخر تحديث <span id="icon-Last Update"></span></th>
+                      <th class="p-3 text-center">الإجراء</th>
+                  </tr>
+              </thead>
+                <tbody class="divide-y text-gray-700 font-medium" id="tbodyReport">
+                  <tr>
+                    <td colspan="11" class="p-6 text-center text-gray-400">الرجاء إدخال بيانات التصفية أو التمهل لجلب السجلات...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <div id="detailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
+    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto text-xs">
+      <div class="flex justify-between items-center mb-3 border-b pb-2">
+        <h3 class="text-sm font-bold text-gray-700"><i class="fa-solid fa-square-poll-horizontal text-sky-600 ml-1"></i> الملف التفصيلي الشامل لحالة الكادر البشري</h3>
+        <button onclick="toggleModal('detailsModal', false)" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+      </div>
+      <div class="space-y-4" id="detailsModalBody">
+        </div>
+      <div class="mt-5 flex justify-end pt-2 border-t">
+        <button onclick="toggleModal('detailsModal', false)" class="bg-sky-600 text-white font-bold px-4 py-1.5 rounded-lg hover:bg-sky-700 shadow">إغلاق الملف</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    // ضع هنا رابط نشر Google Apps Script Web App بعد Deploy > Web app
+    const API_URL = "https://script.google.com/macros/s/AKfycbwyq4C7nOrDRmrOMipZ8i4LcAvo4IHyplpU3hpFuqI7xZ97VA5WD_jl6UyIeM335wJ1pg/exec";
+
+    let currentUser = null;
+    let allEmployeesData = [];
+    let filteredEmployeesData = [];
+    let pendingUpdatesData = [];
+
+    async function apiCall(action, payload = {}) {
+      if (!API_URL || API_URL === "https://script.google.com/macros/s/AKfycbwyq4C7nOrDRmrOMipZ8i4LcAvo4IHyplpU3hpFuqI7xZ97VA5WD_jl6UyIeM335wJ1pg/exec") {
+        throw new Error("يرجى وضع رابط Apps Script Web App داخل المتغير API_URL في أعلى ملف index.html");
+      }
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(Object.assign({ action }, payload)),
+        redirect: "follow"
+      });
+
+      const text = await response.text();
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        throw new Error("استجابة الخادم ليست JSON صالحة. تأكد من نشر Apps Script كرابط Web App بصلاحية Anyone. النص المستلم: " + text.slice(0, 180));
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      document.getElementById('loginPage').classList.remove('hidden');
+      document.getElementById('mainDashboard').classList.add('hidden');
+    });
+
+    function showLoader(show, text = "") {
+      const ldr = document.getElementById('globalLoader');
+      if(text) document.getElementById('loaderText').innerText = text;
+      show ? ldr.classList.remove('hidden') : ldr.classList.add('hidden');
+    }
+
+    function showToast(message, isSuccess = true) {
+      const toast = document.getElementById('toast');
+      toast.innerText = message;
+      toast.className = `fixed bottom-5 left-5 px-5 py-2.5 rounded-xl shadow-2xl text-white text-xs font-bold transition-all duration-500 z-50 ${isSuccess ? 'bg-emerald-600' : 'bg-red-600'}`;
+      toast.classList.remove('hidden');
+      toast.style.opacity = '1';
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.classList.add('hidden'), 500);
+      }, 4000);
+    }
+
+    function toggleModal(modalId, show) {
+      const modal = document.getElementById(modalId);
+      show ? modal.classList.remove('hidden') : modal.classList.add('hidden');
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+      
+      document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active-tab'));
+      document.getElementById('btn-' + tabId).classList.add('active-tab');
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const loginKey = document.getElementById('loginKey').value;
+      const pass = document.getElementById('loginPassword').value;
+      
+      showLoader(true, "جاري مصادقة الحساب والتحقق من الصلاحيات والقيود الميدانية...");
+      
+      apiCall("login", { loginKey: loginKey, password: pass })
+        .then(function(response) {
+          showLoader(false);
+          if (response.success) {
+            currentUser = response.user;
+            showToast("تم التحقق من هويتك بنجاح، مرحباً بك في النظام.");
+            
+            localStorage.setItem('loggedUser', JSON.stringify(currentUser));
+            initDashboard();
+          } else {
+            showToast(response.message, false);
+          }
+        })
+        .catch(function(err) {
+          showLoader(false);
+          showToast("خطأ فادح في الاتصال بالخادم: " + err.message, false);
+        });
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      
+      allEmployeesData = [];
+      filteredEmployeesData = [];
+      pendingUpdatesData = [];
+
+      localStorage.removeItem('loggedUser');
+      document.getElementById('frmLogin').reset();
+      document.getElementById('loginPage').classList.remove('hidden');
+      document.getElementById('mainDashboard').classList.add('hidden');
+      showToast("تم تسجيل خروج الحساب وآمان الجلسة الحالية.");
+    }
+
+    function initDashboard() {
+      document.getElementById('loginPage').classList.add('hidden');
+      document.getElementById('mainDashboard').classList.remove('hidden');
+      
+      document.getElementById('lblUserHeaderName').innerText = currentUser.role === "Employee" ? "لوحة التحكم ومتابعة حالة العمل" : "لوحة التحكم ومتابعة حالة العمل";
+      document.getElementById('lblUserHeaderRole').innerText = "الحساب: " + currentUser.role + " | النطاق المتاح: " + currentUser.area;
+      
+      if (currentUser.role === "Admin" || currentUser.role === "Manager") {
+        document.getElementById('statsPanel').classList.remove('hidden');
+        document.getElementById('btn-tabReports').classList.remove('hidden');
+        document.getElementById('btn-tabApprovals').classList.remove('hidden');
+      } else {
+        document.getElementById('statsPanel').classList.add('hidden');
+        document.getElementById('btn-tabReports').classList.add('hidden');
+        document.getElementById('btn-tabApprovals').classList.add('hidden');
+      }
+      
+      if (currentUser.canExport) {
+        document.getElementById('btnExportExcel').classList.remove('hidden');
+      } else {
+        document.getElementById('btnExportExcel').classList.add('hidden');
+      }
+      
+      refreshSystemData();
+    }
+
+    function refreshSystemData() {
+      showLoader(true, "جاري سحب ومزامنة مصفوفة البيانات المحدثة من الشيت...");
+      apiCall("dashboard", { user: currentUser })
+        .then(function(result) {
+          showLoader(false);
+          allEmployeesData = result.employeesList || [];
+          filteredEmployeesData = [...allEmployeesData];
+          
+          if (currentUser.role === "Admin" || currentUser.role === "Manager") {
+            document.getElementById('statTotal').innerText = result.stats.total;
+            document.getElementById('statInside').innerText = result.stats.insideGaza;
+            document.getElementById('statOutside').innerText = result.stats.outsideGaza;
+            document.getElementById('statEmergency').innerText = result.stats.emergency;
+            document.getElementById('statOnline').innerText = result.stats.online;
+            document.getElementById('statFace').innerText = result.stats.face;
+          }
+          
+          let currentEmpRecord = allEmployeesData.find(e => e["Emp No"].toString().trim() === currentUser.empNo.toString().trim());
+          if(currentEmpRecord) {
+            fillQuickCard(currentEmpRecord);
+            renderPersonalInfoCards(currentEmpRecord);
+            fillWorkStatusForm(currentEmpRecord);
+          }
+          
+          buildDynamicAreaOptions(); // استخراج وبناء خيارات التصفية ديناميكياً من عمود Area/Unit
+          renderReportsTable();
+          if (currentUser.role === "Admin" || currentUser.role === "Manager") {
+            loadPendingUpdates();
+          }
+          buildDynamicTitleOptions();
+          buildDynamicGazaOptions();
+          buildDynamicGovernorateOptions();
+        })
+        .catch(function(err){
+          showLoader(false);
+          showToast("فشلت المزامنة من خادم البيانات: " + err.message, false);
+        });
+    }
+
+    /**
+     * بناء قائمة خيارات "المنطقة التعليمية" في التبويب الثالث من عمود Area/Unit مباشرة
+     */
+    function buildDynamicAreaOptions() {
+      const areaSelect = document.getElementById('filterArea');
+      areaSelect.innerHTML = '<option value="">الكل</option>';
+      
+      if (!allEmployeesData || allEmployeesData.length === 0) return;
+      
+      let uniqueAreas = [];
+      allEmployeesData.forEach(emp => {
+        let areaVal = (emp["Area/Unit"] || "").toString().trim();
+        if (areaVal && !uniqueAreas.includes(areaVal)) {
+          uniqueAreas.push(areaVal);
+        }
+      });
+      
+      uniqueAreas.sort().forEach(area => {
+        const option = document.createElement('option');
+        option.value = area;
+        option.innerText = area;
+        areaSelect.appendChild(option);
+      });
+      
+      updateSchoolFilterOptions();
+    }
+
+    function buildDynamicTitleOptions() {
+  // 1. تحديد عنصر القائمة المنسدلة الخاص بالوظائف (تأكد أن الـ ID مطابق لما في الـ HTML لديك، مثلاً 'filterTitle')
+  const titleSelect = document.getElementById('filterTitle') || document.getElementById('filterJob');
+  if (!titleSelect) return; // حماية في حال لم يكن العنصر موجوداً بالصفحة بعد
+  
+  titleSelect.innerHTML = '<option value="">الكل</option>';
+  
+  // 2. التحقق من وجود بيانات الموظفين المحملة مسبقاً في النظام
+  if (!allEmployeesData || allEmployeesData.length === 0) return;
+  
+  let uniqueTitles = [];
+  
+  // 3. المرور على البيانات واستخراج المسميات الوظيفية بدون تكرار وبدون فراغات
+  allEmployeesData.forEach(emp => {
+    let titleVal = (emp["Title"] || "").toString().trim();
+    if (titleVal && !uniqueTitles.includes(titleVal)) {
+      uniqueTitles.push(titleVal);
+    }
+  });
+  
+  // 4. ترتيب المسميات أبجدياً وإضافتها كخيارات داخل القائمة المنسدلة
+  uniqueTitles.sort().forEach(title => {
+    const option = document.createElement('option');
+    option.value = title;
+    option.innerText = title;
+    titleSelect.appendChild(option);
+  });
+  
+  // 5. استدعاء دالة التحديث اللاحقة إذا كنت ترغب في ربط الفلاتر ببعضها (مثل تحديث جدول البيانات بعد بناء الفلاتر)
+  // في كودك القديم كان يستدعي تحديث المدارس، هنا يمكنك تركه أو استدعاء دالة الفلترة الرئيسية لديك مثل: filterTableData();
+}
+
+
+
+function buildDynamicGazaOptions() {
+  // 1. تحديد عنصر القائمة المنسدلة الخاص بحالة غزة في الواجهة
+  // (تأكد أن الـ id في كود الـ HTML يطابق filterGaza أو قم بتعديله هنا ليطابق ما لديك في التصميم)
+  const gazaSelect = document.getElementById('filterGaza');
+  if (!gazaSelect) return;
+  
+  gazaSelect.innerHTML = '<option value="">الكل</option>';
+  
+  // 2. التحقق من أن مصفوفة بيانات الموظفين محملة مسبقاً وليست فارغة
+  if (!allEmployeesData || allEmployeesData.length === 0) return;
+  
+  let uniqueGazaStatuses = [];
+  
+  // 3. المرور على البيانات وقراءة قيمة العمود بدقة باستخدام اسم الحقل ["Inside/Outside Gaza"]
+  allEmployeesData.forEach(emp => {
+    let gazaVal = (emp["Inside/Outside Gaza"] || "").toString().trim();
+    if (gazaVal && !uniqueGazaStatuses.includes(gazaVal)) {
+      uniqueGazaStatuses.push(gazaVal);
+    }
+  });
+  
+  // 4. ترتيب الحالات وإضافتها ديناميكياً داخل القائمة المنسدلة
+  uniqueGazaStatuses.sort().forEach(status => {
+    const option = document.createElement('option');
+    option.value = status;
+    option.innerText = status; // ستظهر القيم الفعلية المخزنة في الشيت (مثل Inside أو Outside)
+    gazaSelect.appendChild(option);
+  });
+  
+  // 5. استدعاء دالة التحديث اللاحقة للتصفية إن وجدت (مثل الدالة المسؤولة عن فلترة الجدول بناءً على الاختيارات الجديدة)
+  if (typeof updateTableDisplay === "function") {
+    updateTableDisplay();
+  }
+}
+
+
+function buildDynamicGovernorateOptions() {
+  // 1. تحديد عنصر القائمة المنسدلة الخاص بالمحافظة في الواجهة
+  // (تأكد أن الـ id في كود الـ HTML يطابق filterGovernorate أو قم بتعديله هنا ليطابق ما لديك في التصميم)
+  const govSelect = document.getElementById('filterGovernorate');
+  if (!govSelect) return;
+  
+  govSelect.innerHTML = '<option value="">الكل</option>';
+  
+  // 2. التحقق من أن مصفوفة بيانات الموظفين محملة مسبقاً في الواجهة وليست فارغة
+  if (!allEmployeesData || allEmployeesData.length === 0) return;
+  
+  let uniqueGovernorates = [];
+  
+  // 3. المرور على البيانات وقراءة قيمة العمود بدقة باستخدام اسم الحقل ["Current Governorate"]
+  allEmployeesData.forEach(emp => {
+    let govVal = (emp["Current Governorate"] || "").toString().trim();
+    if (govVal && !uniqueGovernorates.includes(govVal)) {
+      uniqueGovernorates.push(govVal);
+    }
+  });
+  
+  // 4. ترتيب المحافظات أبجدياً وإضافتها ديناميكياً داخل القائمة المنسدلة
+  uniqueGovernorates.sort().forEach(gov => {
+    const option = document.createElement('option');
+    option.value = gov;
+    option.innerText = gov; // ستظهر أسماء المحافظات الفعلية المخزنة (مثل: غزة، خان يونس، الوسطى...)
+    govSelect.appendChild(option);
+  });
+  
+  // 5. استدعاء دالة التحديث اللاحقة للجدول إن وجدت (مثل تحديث فلاتر المراكز أو المدارس التابعة للمحافظة)
+  if (typeof updateCenterFilterOptions === "function") {
+    updateCenterFilterOptions();
+  } else if (typeof filterTableData === "function") {
+    filterTableData(); // أو استدعاء دالة الفلترة الرئيسية للجدول مباشرة
+  }
+}
+
+
+
+
+    /**
+     * ربط فلتر المدارس بالمنطقة التعليمية المحددة في التبويب الثالث (مبني على عمود School Name)
+     */
+    function updateSchoolFilterOptions() {
+      const selectedArea = document.getElementById('filterArea').value.trim();
+      const schoolSelect = document.getElementById('filterSchool');
+      
+      schoolSelect.innerHTML = '<option value="">الكل</option>';
+      
+      if (!allEmployeesData || allEmployeesData.length === 0) return;
+      
+      let uniqueSchools = [];
+      
+      allEmployeesData.forEach(emp => {
+        let empArea = (emp["Area/Unit"] || "").toString().trim();
+        let empSchool = (emp["School Name"] || "").toString().trim();
+        
+        if (empSchool && !uniqueSchools.includes(empSchool)) {
+          if (!selectedArea || empArea === selectedArea) {
+            uniqueSchools.push(empSchool);
+          }
+        }
+      });
+      
+      uniqueSchools.sort().forEach(school => {
+        const option = document.createElement('option');
+        option.value = school;
+        option.innerText = school;
+        schoolSelect.appendChild(option);
+      });
+    }
+
+    function fillQuickCard(r) {
+      document.getElementById('quickName').innerText = r["Emp Name"] || "-";
+      document.getElementById('quickTitle').innerText = r["Title"] || "-";
+      document.getElementById('quickArea').innerText = r["Area/Unit"] || "-";
+      document.getElementById('quickSchool').innerText = r["School Name"] || "-";
+      document.getElementById('quickGazaStatus').innerText = r["Inside/Outside Gaza"] || "-";
+      
+      if(r["Last Update"]) {
+        document.getElementById('quickLastUpdate').innerText = new Date(r["Last Update"]).toLocaleString('ar-EG');
+      } else {
+        document.getElementById('quickLastUpdate').innerText = "لم تُحدّث بعد";
+      }
+    }
+
+    function renderPersonalInfoCards(r) {
+      const fields = [
+        { label: "رقم الموظف", val: r["Emp No"], icon: "fa-fingerprint", color: "text-sky-600" },
+        { label: "اسم الموظف الرباعي", val: r["Emp Name"], icon: "fa-user-tie", color: "text-sky-600" },
+        { label: "المسمى الوظيفي", val: r["Title"], icon: "fa-briefcase", color: "text-sky-600" },
+        { label: "المنطقة التعليمية", val: r["Area/Unit"], icon: "fa-map", color: "text-sky-600" },
+        { label: "المدرسة", val: r["School Name"], icon: "fa-school", color: "text-sky-600" },
+        { label: "رمز المدرسة", val: r["Station Code"], icon: "fa-building-shield", color: "text-sky-600" },
+        { label: "حالة التواجد", val: r["Inside/Outside Gaza"], icon: "fa-earth-asia", color: "text-amber-600" }
+      ];
+      
+      document.getElementById('cardsGridPersonal').innerHTML = fields.map(f => `
+        <div class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm flex items-start gap-2.5">
+          <div class="p-2 bg-slate-50 rounded-lg ${f.color} text-sm mt-0.5"><i class="fa-solid ${f.icon}"></i></div>
+          <div class="overflow-hidden">
+            <span class="text-[10px] text-gray-400 block font-bold mb-0.5">${f.label}</span>
+            <span class="text-xs font-bold text-gray-700 block truncate" title="${f.val || ''}">${f.val || 'غير متوفر'}</span>
+          </div>
+        </div>
+      `).join('');
+      
+      document.getElementById('lblGov').innerText = r["Current Governorate"] || "غير محدد";
+      document.getElementById('lblAddress').innerText = r["Full Address"] || "غير محدد";
+      document.getElementById('lblMobile').innerText = r["Mobile No"] || "غير محدد";
+      document.getElementById('lblHardcodedWhatsapp').innerText = r["WhatsApp No"] || "غير محدد";
+    }
+
+    function fillWorkStatusForm(r) {
+      if(r["Emergency Working"]) document.getElementById('wEmergWorking').value = r["Emergency Working"];
+      document.getElementById('wEmergJob').value = r["Emergency Job"] || "";
+      document.getElementById('wEmergPlace').value = r["Emergency Workplace"] || "";
+      if(r["Emergency Area"]) document.getElementById('wEmergArea').value = r["Emergency Area"];
+      
+      if(r["Online Working"]) document.getElementById('wOnlineWorking').value = r["Online Working"];
+      document.getElementById('wOnlineJob').value = r["Online Job"] || "";
+      document.getElementById('wOnlinePlace').value = r["Online Workplace"] || "";
+      if(r["Online Area"]) document.getElementById('wOnlineArea').value = r["Online Area"];
+      
+      if(r["Face Working"]) document.getElementById('wFaceWorking').value = r["Face Working"];
+      document.getElementById('wFaceJob').value = r["Face Job"] || "";
+      document.getElementById('wFacePlace').value = r["Face Workplace"] || "";
+      if(r["Face Area"]) document.getElementById('wFaceArea').value = r["Face Area"];
+      
+      document.getElementById('wNotes').value = r["Notes"] || "";
+    }
+
+    function openEditAddressModal() {
+      let currentEmpRecord = allEmployeesData.find(e => e["Emp No"].toString().trim() === currentUser.empNo.toString().trim());
+      if(currentEmpRecord) {
+        if(currentEmpRecord["Current Governorate"]) document.getElementById('inpGov').value = currentEmpRecord["Current Governorate"];
+        document.getElementById('inpAddress').value = currentEmpRecord["Full Address"] || "";
+        document.getElementById('inpMobile').value = currentEmpRecord["Mobile No"] || "";
+        document.getElementById('inpWhatsapp').value = currentEmpRecord["WhatsApp No"] || "";
+      }
+      toggleModal('editAddressModal', true);
+    }
+
+    function submitAddressUpdate(e) {
+      e.preventDefault();
+      const gov = document.getElementById('inpGov').value;
+      const addr = document.getElementById('inpAddress').value;
+      const mob = document.getElementById('inpMobile').value;
+      const whatsapp = document.getElementById('inpWhatsapp').value;
+      
+      toggleModal('editAddressModal', false);
+      showLoader(true, "جاري ترحيل وحفظ تعديلات عناوين التواصل والاتصال الطارئة...");
+      
+      apiCall("updatePersonal", { empNo: currentUser.empNo, governorate: gov, address: addr, mobile: mob, whatsapp: whatsapp })
+        .then(function(res){
+          if(res.success) {
+            showToast("تم إرسال تعديل بيانات التواصل بانتظار اعتماد المدير/الأدمن.");
+            refreshSystemData();
+          } else {
+            showLoader(false);
+            showToast(res.message, false);
+          }
+        })
+        .catch(function(err){
+          showLoader(false);
+          showToast("فشلت عملية تحديث الحقول الميدانية: " + err.message, false);
+        });
+    }
+
+    function submitWorkStatusUpdate(e) {
+      e.preventDefault();
+      const dataObj = {
+        emergencyWorking: document.getElementById('wEmergWorking').value,
+        emergencyJob: document.getElementById('wEmergJob').value,
+        emergencyWorkplace: document.getElementById('wEmergPlace').value,
+        emergencyArea: document.getElementById('wEmergArea').value,
+        
+        onlineWorking: document.getElementById('wOnlineWorking').value,
+        onlineJob: document.getElementById('wOnlineJob').value,
+        onlineWorkplace: document.getElementById('wOnlinePlace').value,
+        onlineArea: document.getElementById('wOnlineArea').value,
+        
+        faceWorking: document.getElementById('wFaceWorking').value,
+        faceJob: document.getElementById('wFaceJob').value,
+        faceWorkplace: document.getElementById('wFacePlace').value,
+        faceArea: document.getElementById('wFaceArea').value,
+        
+        notes: document.getElementById('wNotes').value
+      };
+      
+      showLoader(true, "جاري ترحيل وحفظ مصفوفة مسارات العمل وتحديث السجل الموحد في الشيت...");
+      
+      apiCall("updateWork", { empNo: currentUser.empNo, data: dataObj })
+        .then(function(res){
+          if(res.success){
+            showToast("تم إرسال تعديل حالة العمل بانتظار اعتماد المدير/الأدمن.");
+            refreshSystemData();
+          } else {
+            showLoader(false);
+            showToast(res.message, false);
+          }
+        })
+        .catch(function(err){
+          showLoader(false);
+          showToast("فشل حفظ وتحديث مصفوفة مسارات العمل: " + err.message, false);
+        });
+    }
+
+    function renderReportsTable() {
+      const tbody = document.getElementById('tbodyReport');
+      if (currentUser.role !== "Admin" && currentUser.role !== "Manager") return;
+      
+      if(filteredEmployeesData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" class="p-5 text-center text-gray-400">لا تتوفر أي سجلات مطابقة لمعايير الفرز والبحث الحالية في نطاق صلاحياتك.</td></tr>`;
+        return;
+      }
+      
+      tbody.innerHTML = filteredEmployeesData.map(emp => {
+        let updateTime = emp["Last Update"] ? new Date(emp["Last Update"]).toLocaleDateString('ar-EG') : 'بلا تحديث';
+        
+        let bEmerg = emp["Emergency Working"] === "نعم" ? `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold">نعم</span>` : `<span class="text-gray-300">لا</span>`;
+        let bOnline = emp["Online Working"] === "نعم" ? `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-bold">نعم</span>` : `<span class="text-gray-300">لا</span>`;
+        let bFace = emp["Face Working"] === "نعم" ? `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">نعم</span>` : `<span class="text-gray-300">لا</span>`;
+        
+        return `
+          <tr class="hover:bg-slate-50 transition-colors border-b text-[11px]">
+            <td class="p-3 font-bold text-gray-900">${emp["Emp No"]}</td>
+            <td class="p-3 font-semibold text-gray-800">${emp["Emp Name"] || '-'}</td>
+            <td class="p-3">${emp["Title"] || '-'}</td>
+            <td class="p-3">${emp["Area/Unit"] || '-'}</td>
+            <td class="p-3 max-w-[140px] truncate" title="${emp["School Name"] || ''}">${emp["School Name"] || '-'}</td>
+            <td class="p-3"><span class="${emp["Inside/Outside Gaza"]==='داخل غزة'?'text-emerald-600 font-bold':'text-amber-600 font-bold'}">${emp["Inside/Outside Gaza"] || '-'}</span></td>
+            <td class="p-3 text-center">${bEmerg}</td>
+            <td class="p-3 text-center">${bOnline}</td>
+            <td class="p-3 text-center">${bFace}</td>
+            <td class="p-3 text-gray-400 text-[10px]">${updateTime}</td>
+            <td class="p-3 text-center">
+              <button onclick="viewEmployeeDetails('${emp["Emp No"]}')" class="bg-sky-50 text-sky-600 hover:bg-sky-600 hover:text-white p-1 rounded transition-all" title="عرض السجل التفصيلي الشامل">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    /**
+     * تنفيذ الفلترة النهائية بمطابقة دقيقة تامة للنصوص العربية للأعمدة المذكورة
+     */
+    function applyFilters() {
+      const fEmpNo = document.getElementById('filterEmpNo').value.trim().toLowerCase();
+      const fArea = document.getElementById('filterArea').value.trim(); 
+      const fSchool = document.getElementById('filterSchool').value.trim(); 
+      const fTitle = document.getElementById('filterTitle').value.trim().toLowerCase();
+      const fInside = document.getElementById('filterGaza').value;
+      const fGov = document.getElementById('filterGovernorate').value;
+      const fTrack = document.getElementById('filterWorkTrack').value;
+      
+      filteredEmployeesData = allEmployeesData.filter(emp => {
+        let empNo = (emp["Emp No"] || "").toString().toLowerCase();
+        let empArea = (emp["Area/Unit"] || "").toString().trim(); 
+        let empSchool = (emp["School Name"] || "").toString().trim(); 
+        let empTitle = (emp["Title"] || "").toString().toLowerCase();
+        
+        if (fEmpNo && !empNo.includes(fEmpNo)) return false;
+        if (fArea && empArea !== fArea) return false; 
+        if (fSchool && empSchool !== fSchool) return false; 
+        if (fTitle && !empTitle.includes(fTitle)) return false;
+        if (fInside && emp["Inside/Outside Gaza"] !== fInside) return false;
+        if (fGov && emp["Current Governorate"] !== fGov) return false;
+        
+        if (fTrack) {
+          if (fTrack === 'emergency' && emp["Emergency Working"] !== 'نعم') return false;
+          if (fTrack === 'online' && emp["Online Working"] !== 'نعم') return false;
+          if (fTrack === 'face' && emp["Face Working"] !== 'نعم') return false;
+        }
+        return true;
+      });
+      
+      renderReportsTable();
+      showToast("تم تطبيق معايير التصفية والفرز المحددة للمنطقة والمدارس بنجاح.");
+    }
+
+    function clearFilters() {
+      document.getElementById('filterEmpNo').value = "";
+      document.getElementById('filterArea').value = "";
+      document.getElementById('filterSchool').value = "";
+      document.getElementById('filterTitle').value = "";
+      document.getElementById('filterGaza').value = "";
+      document.getElementById('filterGovernorate').value = "";
+      document.getElementById('filterWorkTrack').value = "";
+      
+      filteredEmployeesData = [...allEmployeesData];
+      renderReportsTable();
+      buildDynamicAreaOptions(); 
+      buildDynamicTitleOptions();
+      buildDynamicGazaOptions();
+      buildDynamicGovernorateOptions();
+      showToast("تمت إعادة تصفير وإلغاء فلاتر محرك البحث.");
+    }
+
+    function viewEmployeeDetails(empNo) {
+      let emp = allEmployeesData.find(e => e["Emp No"].toString().trim() === empNo.toString().trim());
+      if(!emp) return;
+      
+      const bdy = document.getElementById('detailsModalBody');
+      bdy.innerHTML = `
+        <div class="bg-sky-50 border border-sky-100 p-3 rounded-xl flex flex-wrap justify-between gap-2">
+          <div>رقم الموظف: <strong class="text-sky-700 text-xs">${emp["Emp No"]}</strong></div>
+          <div>الاسم الكامل: <strong class="text-gray-800 text-xs">${emp["Emp Name"] || '-'}</strong></div>
+          <div>الوظيفة الأصلية: <strong class="text-gray-800 text-xs">${emp["Title"] || '-'}</strong></div>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[11px]">
+          <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200">
+            <h4 class="font-bold text-gray-700 border-b pb-1 mb-2"><i class="fa-solid fa-landmark text-sky-600"></i> معطيات التعيين والارتباط</h4>
+            <p class="mb-1">المنطقة التعليمية: <strong>${emp["Area/Unit"] || '-'}</strong></p>
+            <p class="mb-1">المدرسة/الفرع الأصلي: <strong>${emp["School Name"] || '-'}</strong></p>
+            <p class="mb-1">رمز محطة العمل الحالية: <strong>${emp["Station Code"] || '-'}</strong></p>
+            <p>التواجد الجغرافي: <strong>${emp["Inside/Outside Gaza"] || '-'}</strong></p>
+          </div>
+          <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200">
+            <h4 class="font-bold text-gray-700 border-b pb-1 mb-2"><i class="fa-solid fa-address-book text-emerald-600"></i> تفاصيل التواصل الطارئ</h4>
+            <p class="mb-1">محافظة الإقامة المنقول إليها: <strong>${emp["Current Governorate"] || '-'}</strong></p>
+            <p class="mb-1">العنوان بالتفصيل الكامل: <strong>${emp["Full Address"] || '-'}</strong></p>
+            <p class="mb-1">رقم الهاتف الفعال: <strong>${emp["Mobile No"] || '-'}</strong></p>
+            <p>رقم حساب الواتساب: <strong dir="ltr" class="text-emerald-700 font-bold">${emp["WhatsApp No"] || '-'}</strong></p>
+          </div>
+        </div>
+
+        <div class="bg-amber-50 bg-opacity-40 p-4 rounded-xl border border-amber-200">
+          <h4 class="font-bold text-amber-800 border-b border-amber-200 pb-1 mb-2.5"><i class="fa-solid fa-network-wired"></i> تفاصيل ومصفوفة مسارات العمل الاستثنائية الحالية</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="p-2.5 bg-white rounded-lg border border-amber-100">
+              <span class="font-bold block text-red-700 mb-1"><i class="fa-solid fa-truck-medical"></i> مسار الطوارئ:</span>
+              يعمل حالياً: <strong>${emp["Emergency Working"] || 'لا'}</strong><br>
+              الوظيفة: <strong>${emp["Emergency Job"] || '-'}</strong><br>
+              المكان الميداني: <strong>${emp["Emergency Workplace"] || '-'}</strong><br>
+              المنطقة: <strong>${emp["Emergency Area"] || '-'}</strong>
+            </div>
+            <div class="p-2.5 bg-white rounded-lg border border-amber-100">
+              <span class="font-bold block text-indigo-700 mb-1"><i class="fa-solid fa-display"></i> مسار الإلكتروني:</span>
+              يعمل حالياً: <strong>${emp["Online Working"] || 'لا'}</strong><br>
+              الوظيفة: <strong>${emp["Online Job"] || '-'}</strong><br>
+              المكان الرقمي: <strong>${emp["Online Workplace"] || '-'}</strong><br>
+              المنطقة: <strong>${emp["Online Area"] || '-'}</strong>
+            </div>
+            <div class="p-2.5 bg-white rounded-lg border border-amber-100">
+              <span class="font-bold block text-purple-700 mb-1"><i class="fa-solid fa-graduation-cap"></i> مسار الوجاهي:</span>
+              يعمل حالياً: <strong>${emp["Face Working"] || 'لا'}</strong><br>
+              الوظيفة: <strong>${emp["Face Job"] || '-'}</strong><br>
+              المركز الميداني: <strong>${emp["Face Workplace"] || '-'}</strong><br>
+              المنطقة: <strong>${emp["Face Area"] || '-'}</strong>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-dashed border-amber-200">
+            <span class="font-bold block text-gray-700">ملاحظات وشرائط لوجستية إضافية مسجلة:</span>
+            <p class="text-gray-600 bg-white p-2 rounded-lg border border-amber-100 mt-1">${emp["Notes"] || 'لا توجد ملاحظات تفصيلية مضافة على ملف الموظف حالياً.'}</p>
+          </div>
+        </div>
+      `;
+      toggleModal('detailsModal', true);
+    }
+
+
+    function loadPendingUpdates() {
+      if (currentUser.role !== "Admin" && currentUser.role !== "Manager") return;
+
+      apiCall("getPending", { user: currentUser })
+        .then(function(list){
+          pendingUpdatesData = list || [];
+          renderPendingApprovalsTable();
+        })
+        .catch(function(err){
+          showToast("فشل جلب طلبات الاعتماد: " + err.message, false);
+        });
+    }
+
+    function renderPendingApprovalsTable() {
+      const tbody = document.getElementById('tbodyApprovals');
+      const badge = document.getElementById('pendingCountBadge');
+      if (!tbody) return;
+
+      if (badge) {
+        badge.innerText = pendingUpdatesData.length;
+        pendingUpdatesData.length > 0 ? badge.classList.remove('hidden') : badge.classList.add('hidden');
+      }
+
+      if (!pendingUpdatesData || pendingUpdatesData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-gray-400">لا توجد طلبات تعديل معلّقة حالياً.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = pendingUpdatesData.map(req => {
+        const typeLabel = req.requestType === "PersonalInfo" ? "بيانات التواصل والسكن" : "حالة العمل";
+        const payloadText = formatPendingPayload(req);
+        const reqDate = req.requestedAt ? new Date(req.requestedAt).toLocaleString('ar-EG') : "-";
+
+        return `
+          <tr class="hover:bg-slate-50 transition-colors border-b text-[11px] align-top">
+            <td class="p-3 font-bold text-gray-900">${req.requestId}</td>
+            <td class="p-3">
+              <div class="font-bold text-gray-800">${req.empName || '-'}</div>
+              <div class="text-gray-400">${req.empNo || '-'}</div>
+            </td>
+            <td class="p-3">${req.area || '-'}</td>
+            <td class="p-3"><span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold">${typeLabel}</span></td>
+            <td class="p-3 whitespace-pre-line text-gray-700 min-w-[220px]">${payloadText}</td>
+            <td class="p-3 text-gray-400 text-[10px]">${reqDate}</td>
+            <td class="p-3 text-center whitespace-nowrap">
+              <button onclick="approveRequest('${req.requestId}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded-lg font-bold ml-1">
+                <i class="fa-solid fa-check"></i> اعتماد
+              </button>
+              <button onclick="rejectRequest('${req.requestId}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg font-bold">
+                <i class="fa-solid fa-xmark"></i> رفض
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function formatPendingPayload(req) {
+      const p = req.payload || {};
+      if (req.requestType === "PersonalInfo") {
+        return [
+          `المحافظة: ${p.governorate || '-'}`,
+          `العنوان: ${p.address || '-'}`,
+          `الجوال: ${p.mobile || '-'}`,
+          `واتساب: ${p.whatsapp || '-'}`
+        ].join('\\n');
+      }
+
+      return [
+        `الطوارئ: ${p.emergencyWorking || '-'} | ${p.emergencyJob || '-'} | ${p.emergencyWorkplace || '-'} | ${p.emergencyArea || '-'}`,
+        `الإلكتروني: ${p.onlineWorking || '-'} | ${p.onlineJob || '-'} | ${p.onlineWorkplace || '-'} | ${p.onlineArea || '-'}`,
+        `الوجاهي: ${p.faceWorking || '-'} | ${p.faceJob || '-'} | ${p.faceWorkplace || '-'} | ${p.faceArea || '-'}`,
+        `ملاحظات: ${p.notes || '-'}`
+      ].join('\\n');
+    }
+
+    function approveRequest(requestId) {
+      showLoader(true, "جاري اعتماد طلب التعديل وتطبيقه على البيانات الأصلية...");
+      apiCall("approvePending", { requestId: requestId, reviewerEmpNo: currentUser.empNo })
+        .then(function(res){
+          showLoader(false);
+          if (res.success) {
+            showToast("تم اعتماد طلب التعديل وتطبيقه بنجاح.");
+            refreshSystemData();
+          } else {
+            showToast(res.message, false);
+          }
+        })
+        .catch(function(err){
+          showLoader(false);
+          showToast("فشل اعتماد الطلب: " + err.message, false);
+        });
+    }
+
+    function rejectRequest(requestId) {
+      const notes = prompt("سبب الرفض / ملاحظات المراجع:", "");
+      showLoader(true, "جاري رفض طلب التعديل...");
+      apiCall("rejectPending", { requestId: requestId, reviewerEmpNo: currentUser.empNo, notes: notes || "" })
+        .then(function(res){
+          showLoader(false);
+          if (res.success) {
+            showToast("تم رفض طلب التعديل.");
+            loadPendingUpdates();
+          } else {
+            showToast(res.message, false);
+          }
+        })
+        .catch(function(err){
+          showLoader(false);
+          showToast("فشل رفض الطلب: " + err.message, false);
+        });
+    }
+
+    function exportToExcel() {
+      if(!currentUser.canExport) {
+        showToast("لا تملك الصلاحية الأمنية لتصدير الملفات خارج نطاق المنظومة.", false);
+        return;
+      }
+      
+      showLoader(true, "جاري معالجة وتوليد مصفوفة ملف Excel المعتمد للتنزيل...");
+      
+      let rowsForExport = filteredEmployeesData.map(x => ({
+        "الرقم الوظيفي": x["Emp No"],
+        "اسم الموظف الرباعي": x["Emp Name"],
+        "الوظيفة": x["Title"],
+        "المنطقة التعليمية": x["Area/Unit"],
+        "المدرسة/المركز": x["School Name"],
+        "رمز مبنى المحطة": x["Station Code"],
+        "نطاق التواجد بغزة": x["Inside/Outside Gaza"],
+        "المحافظة الحالية": x["Current Governorate"],
+        "العنوان بالتفصيل": x["Full Address"],
+        "رقم الهاتف الخلوي": x["Mobile No"],
+        "رقم حساب الواتساب": x["WhatsApp No"],
+        "يعمل بالطوارئ": x["Emergency Working"],
+        "تخصص الطوارئ الاستثنائي": x["Emergency Job"],
+        "مكان عمل الطوارئ": x["Emergency Workplace"],
+        "منطقة الطوارئ": x["Emergency Area"],
+        "يعمل بالتعليم الإلكتروني": x["Online Working"],
+        "مهنة مسار الإلكتروني": x["Online Job"],
+        "مكان مسار الإلكتروني": x["Online Workplace"],
+        "منطقة مسار الإلكتروني": x["Online Area"],
+        "يعمل بالتعليم الوجاهي": x["Face Working"],
+        "مهنة مسار الوجاهي": x["Face Job"],
+        "مركز مسار الوجاهي": x["Face Workplace"],
+        "منطقة مسار الوجاهي": x["Face Area"],
+        "ملاحظات وشروحات عامة": x["Notes"],
+        "توقيت آخر تحديث للمصفوفة": x["Last Update"] ? new Date(x["Last Update"]).toLocaleString('ar-EG') : ''
+      }));
+      
+      const worksheet = XLSX.utils.json_to_sheet(rowsForExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "نتائج الفرز الحالية 2026");
+      
+      XLSX.writeFile(workbook, "Employees_Report_2026.xlsx");
+      
+      apiCall("logAction", { empNo: currentUser.empNo, type: "تصدير تقرير إكسيل", details: `تصدير عدد ${filteredEmployeesData.length} سجل إلى ملف Employees_Report_2026.xlsx` }).catch(function(){});
+      
+      showLoader(false);
+      showToast("تم بناء وتنزيل ملف التقرير Employees_Report_2026.xlsx بنجاح.");
+    }
+
+    function submitPasswordChange() {
+      const oldP = document.getElementById('oldPass').value;
+      const newP = document.getElementById('newPass').value;
+      if(!oldP || !newP) {
+        showToast("يرجى تعبئة حقول كلمات المرور الحالية والجديدة بدقة.", false);
+        return;
+      }
+      
+      toggleModal('passwordModal', false);
+      showLoader(true, "جاري تحديث وتشفير رمز المرور السري الجديد في قاعدة البيانات...");
+      
+      apiCall("resetPassword", { empNo: currentUser.empNo, oldPass: oldP, newPass: newP })
+        .then(function(res){
+          showLoader(false);
+          document.getElementById('oldPass').value = "";
+          document.getElementById('newPass').value = "";
+          if(res.success){
+            showToast("تم تحديث رمز المرور السري الخاص بك بنجاح.");
+          } else {
+            showToast(res.message, false);
+          }
+        })
+        .catch(function(err){
+          showLoader(false);
+          showToast("خطأ أثناء معالجة كلمة المرور: " + err.message, false);
+        });
+    }
+    
+
+  let currentSortColumn = '';
+let sortAscending = true;
+
+// دالة ترتيب بيانات الجدول
+function sortTable(columnKey) {
+    // 1. التحقق من اتجاه الترتيب (تصاعدي أو تنازلي)
+    if (currentSortColumn === columnKey) {
+        sortAscending = !sortAscending;
+    } else {
+        currentSortColumn = columnKey;
+        sortAscending = true;
+    }
+
+    // 2. ترتيب المصفوفة المفلترة الحالية
+    filteredEmployeesData.sort((a, b) => {
+        let valA = (a[columnKey] || '').toString().trim();
+        let valB = (b[columnKey] || '').toString().trim();
+
+        // معالجة خاصة للأرقام (مثل الرقم الوظيفي) لضمان ترتيبها كقيمة رقمية وليس كنص
+        if (!isNaN(valA) && valA !== '' && !isNaN(valB) && valB !== '') {
+            valA = Number(valA);
+            valB = Number(valB);
+        }
+
+        if (valA < valB) return sortAscending ? -1 : 1;
+        if (valA > valB) return sortAscending ? 1 : -1;
+        return 0;
+    });
+
+    // 3. إعادة رسم الجدول وتحديث الأيقونات
+    renderReportsTable();
+    updateSortIcons(columnKey);
+}
+
+// دالة تحديث أيقونات (الأسهم) في عناوين الجدول
+function updateSortIcons(activeColumn) {
+    // أسماء الأعمدة التي تدعم الترتيب
+    const columns = ['Emp No', 'Emp Name', 'Title', 'Area/Unit', 'School Name', 'Inside/Outside Gaza', 'Emergency Working', 'Online Working', 'Face Working', 'Last Update'];
+    
+    // إزالة جميع الأيقونات السابقة من كل العناوين
+    columns.forEach(col => {
+        // إذا كان العمود يحتوي على مسافة أو رمز مائل، يجب استخدام getElementById بدقة
+        const iconSpan = document.getElementById(`icon-${col}`);
+        if (iconSpan) {
+            iconSpan.innerHTML = ''; 
+        }
+    });
+
+    // رسم أيقونة السهم (تصاعدي/تنازلي) للعمود المضغوط حالياً
+    const activeSpan = document.getElementById(`icon-${activeColumn}`);
+    if (activeSpan) {
+        // نستخدم أيقونات FontAwesome الموجودة مسبقاً في مشروعك
+        activeSpan.innerHTML = sortAscending 
+            ? '<i class="fa-solid fa-arrow-down-short-wide text-[10px] text-sky-600 mr-1"></i>' 
+            : '<i class="fa-solid fa-arrow-up-wide-short text-[10px] text-sky-600 mr-1"></i>';
+    }
+}
+
+    window.onload = function() {
+  const savedUser = localStorage.getItem('loggedUser');
+  if (savedUser) {
+    // إذا وجدت بيانات مستخدم مخزنة، قم بفك تشفيرها والدخول فوراً
+    currentUser = JSON.parse(savedUser);
+    initDashboard();
+  } else {
+    // إذا لم توجد بيانات، اظهر صفحة تسجيل الدخول العادية
+    document.getElementById('loginPage').classList.remove('hidden');
+    document.getElementById('mainDashboard').classList.add('hidden');
+  }
+};
+
+
+  </script>
+</body>
+</html>
