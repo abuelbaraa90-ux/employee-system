@@ -557,7 +557,7 @@
     let pendingUpdatesData = [];
 
     async function apiCall(action, payload = {}) {
-      if (!API_URL || API_URL === "https://script.google.com/macros/s/AKfycbwyq4C7nOrDRmrOMipZ8i4LcAvo4IHyplpU3hpFuqI7xZ97VA5WD_jl6UyIeM335wJ1pg/exec") {
+      if (!API_URL || API_URL.includes("https://script.google.com/macros/s/AKfycbwyq4C7nOrDRmrOMipZ8i4LcAvo4IHyplpU3hpFuqI7xZ97VA5WD_jl6UyIeM335wJ1pg/exec")) {
         throw new Error("يرجى وضع رابط Apps Script Web App داخل المتغير API_URL في أعلى ملف index.html");
       }
 
