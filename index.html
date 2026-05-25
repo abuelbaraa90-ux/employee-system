@@ -274,119 +274,146 @@
         </div>
 
      <div id="tabWorkStatus" class="tab-content space-y-6 hidden">
-          <div class="border-r-4 border-amber-500 pr-2.5 mb-4">
-            <h3 class="text-sm font-bold text-gray-800">تحديث حالة العمل</h3>
-          </div>
-
-          <form id="frmWorkStatus" onsubmit="submitWorkStatusUpdate(event)" class="space-y-4 text-xs">
-            <div class="bg-red-50 bg-opacity-50 p-4 rounded-xl border border-red-100 grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div class="md:col-span-4 font-bold text-red-800 text-xs flex items-center gap-1.5"><i class="fa-solid fa-truck-medical"></i> أولاً: نطاق العمل في الطوارئ</div>
-              <div>
-                <label class="block font-bold text-gray-600 mb-1">هل يعمل حالياً في الطوارئ؟</label>
-                <select id="wEmergWorking" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-                  <option value="نعم">نعم</option>
-                  <option value="لا">لا</option>
-                </select>
+          <div>
+            <div class="flex justify-between items-center mb-4">
+              <div class="flex items-center gap-2 border-r-4 border-amber-500 pr-2.5">
+                <h3 class="text-sm font-bold text-gray-800">بيانات حالة العمل المعتمدة</h3>
               </div>
-              <div>
-                <label class="block font-bold text-gray-600 mb-1">المهنة / المسمى بالطوارئ</label>
-                <input type="text" id="wEmergJob" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-              </div>
-              <div>
-                <label class="block font-bold text-gray-600 mb-1">مكان العمل في الطوارئ </label>
-                <input type="text" id="wEmergPlace" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-              </div>
-              <div>
-                <label class="block font-bold text-gray-600 mb-1">منطقة عمل الطوارئ</label>
-                <select id="wEmergArea" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-                  <option value="Gaza">Gaza</option>
-                  <option value="Middle">Middle</option>
-                  <option value="Khanyounis">Khanyounis</option>
-                  <option value="North Gaza">North Gaza</option>
-                  <option value="Rafah">Rafah</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="bg-indigo-50 bg-opacity-50 p-4 rounded-xl border border-indigo-100 grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div class="md:col-span-4 font-bold text-indigo-800 text-xs flex items-center gap-1.5"><i class="fa-solid fa-display"></i> ثانياً: نطاق التعليم الإلكتروني - عن بعد</div>
-              <div>
-                <label class="block font-bold text-gray-600 mb-1">هل يعمل في التعليم الإلكتروني؟</label>
-                <select id="wOnlineWorking" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-                  <option value="نعم">نعم</option>
-                  <option value="لا">لا</option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-bold text-gray-600 mb-1">المهنة في التعليم الإلكتروني</label>
-                <input type="text" id="wOnlineJob" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-              </div>
-              <div>
-                <label class="block font-bold text-gray-600 mb-1">مكان العمل في التعليم الإلكتروني</label>
-                <input type="text" id="wOnlinePlace" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-              </div>
-              <div>
-                <label class="block font-bold text-gray-600 mb-1">منطقة العمل في التعليم الإلكتروني </label>
-                <select id="wOnlineArea" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-                  <option value="East Gaza">East Gaza</option>
-                  <option value="West Gaza">West Gaza</option>
-                  <option value="South Gaza">South Gaza</option>                                    
-                  <option value="East Middle">East Middle</option>
-                  <option value="West Middle">West Middle</option>                  
-                  <option value="West Khanyounis">West Khanyounis</option>
-                  <option value="East Khanyounis">East Khanyounis</option>
-                  <option value="South Rafah">South Rafah</option>
-                  <option value="Nourth Rafah">Nourth Rafah</option>
-                  <option value="Jabalia">Jabalia</option>
-                  <option value="B-Hanon& B-Lahia">B-Hanon& B-Lahia</option>
-
-                  
-                </select>
-              </div>
-            </div>
-
-            <div class="bg-purple-50 bg-opacity-50 p-4 rounded-xl border border-purple-100 grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div class="md:col-span-4 font-bold text-purple-800 text-xs flex items-center gap-1.5"><i class="fa-solid fa-graduation-cap"></i> ثالثاً: نطاق التعليم الوجاهي - غير الرسمي</div>
-              <div>
-                <label class="block font-bold text-gray-600 mb-1">هل يعمل في التعليم الوجاهي؟</label>
-                <select id="wFaceWorking" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-                  <option value="نعم">نعم</option>
-                  <option value="لا">لا</option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-bold text-gray-600 mb-1">المهنة في التعليم الوجاهي - غير الرسمي</label>
-                <input type="text" id="wFaceJob" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-              </div>
-              <div>
-                <label class="block font-bold text-gray-600 mb-1">مكان العمل في التعليم الوجاهي - غير الرسمي </label>
-                <input type="text" id="wFacePlace" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-              </div>
-              <div>
-                <label class="block font-bold text-gray-600 mb-1">منطقة العمل في التعليم الوجاهي </label>
-                <select id="wFaceArea" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-                  <option value="East Gaza">East Gaza</option>
-                  <option value="East Middle">East Middle</option>
-                  <option value="West Khanyounis">West Khanyounis</option>
-                  <option value="South Gaza">South Gaza</option>
-                  <option value="Jabalia">Jabalia</option>
-                  <option value="West Gaza">West Gaza</option>
-                  <option value="West Middle">West Middle</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="bg-slate-50 p-4 rounded-xl border border-gray-200">
-              <label class="block font-bold text-gray-700 mb-1"><i class="fa-solid fa-comment-medical text-gray-400"></i> رابعاً: ملاحظات إضافية</label>
-              <textarea id="wNotes" rows="2" class="w-full border rounded-lg p-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="ادخل ملاحظاتك..."></textarea>
-            </div>
-
-            <div class="flex justify-end">
-              <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-6 py-2 rounded-xl shadow transition-all flex items-center gap-1.5">
-                <i class="fa-solid fa-cloud-arrow-up"></i> حفظ تعديلات حالة العمل
+              <button onclick="openEditWorkStatusModal()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-pen-to-square"></i> تعديل حالة العمل
               </button>
             </div>
-          </form>
+
+            <div id="cardsGridWorkStatus" class="grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs">
+              <!-- يتم بناء بطاقات حالة العمل ديناميكياً من JavaScript -->
+            </div>
+
+            <div class="mt-4 bg-slate-50 p-4 rounded-xl border border-gray-200 text-xs">
+              <span class="text-[10px] text-gray-400 block mb-1">ملاحظات إضافية</span>
+              <div class="flex items-start gap-1.5 font-bold text-gray-700">
+                <i class="fa-solid fa-comment-medical text-gray-400 mt-0.5"></i>
+                <span id="lblWorkNotes">غير محدد</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="editWorkStatusModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
+            <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto text-xs">
+              <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="text-sm font-bold text-gray-700"><i class="fa-solid fa-network-wired text-amber-600 ml-1"></i> تعديل حالة العمل</h3>
+                <button type="button" onclick="toggleModal('editWorkStatusModal', false)" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+              </div>
+
+              <form id="frmWorkStatus" onsubmit="submitWorkStatusUpdate(event)" class="space-y-4 text-xs">
+                <div class="bg-red-50 bg-opacity-50 p-4 rounded-xl border border-red-100 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div class="md:col-span-4 font-bold text-red-800 text-xs flex items-center gap-1.5"><i class="fa-solid fa-truck-medical"></i> أولاً: نطاق العمل في الطوارئ</div>
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">هل يعمل حالياً في الطوارئ؟</label>
+                    <select id="wEmergWorking" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                      <option value="نعم">نعم</option>
+                      <option value="لا">لا</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">المهنة / المسمى بالطوارئ</label>
+                    <input type="text" id="wEmergJob" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">مكان العمل في الطوارئ </label>
+                    <input type="text" id="wEmergPlace" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">منطقة عمل الطوارئ</label>
+                    <select id="wEmergArea" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                      <option value="Gaza">Gaza</option>
+                      <option value="Middle">Middle</option>
+                      <option value="Khanyounis">Khanyounis</option>
+                      <option value="North Gaza">North Gaza</option>
+                      <option value="Rafah">Rafah</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="bg-indigo-50 bg-opacity-50 p-4 rounded-xl border border-indigo-100 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div class="md:col-span-4 font-bold text-indigo-800 text-xs flex items-center gap-1.5"><i class="fa-solid fa-display"></i> ثانياً: نطاق التعليم الإلكتروني - عن بعد</div>
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">هل يعمل في التعليم الإلكتروني؟</label>
+                    <select id="wOnlineWorking" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                      <option value="نعم">نعم</option>
+                      <option value="لا">لا</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">المهنة في التعليم الإلكتروني</label>
+                    <input type="text" id="wOnlineJob" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">مكان العمل في التعليم الإلكتروني</label>
+                    <input type="text" id="wOnlinePlace" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">منطقة العمل في التعليم الإلكتروني </label>
+                    <select id="wOnlineArea" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                      <option value="East Gaza">East Gaza</option>
+                      <option value="West Gaza">West Gaza</option>
+                      <option value="South Gaza">South Gaza</option>                                    
+                      <option value="East Middle">East Middle</option>
+                      <option value="West Middle">West Middle</option>                  
+                      <option value="West Khanyounis">West Khanyounis</option>
+                      <option value="East Khanyounis">East Khanyounis</option>
+                      <option value="South Rafah">South Rafah</option>
+                      <option value="Nourth Rafah">Nourth Rafah</option>
+                      <option value="Jabalia">Jabalia</option>
+                      <option value="B-Hanon& B-Lahia">B-Hanon& B-Lahia</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="bg-purple-50 bg-opacity-50 p-4 rounded-xl border border-purple-100 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div class="md:col-span-4 font-bold text-purple-800 text-xs flex items-center gap-1.5"><i class="fa-solid fa-graduation-cap"></i> ثالثاً: نطاق التعليم الوجاهي - غير الرسمي</div>
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">هل يعمل في التعليم الوجاهي؟</label>
+                    <select id="wFaceWorking" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                      <option value="نعم">نعم</option>
+                      <option value="لا">لا</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">المهنة في التعليم الوجاهي - غير الرسمي</label>
+                    <input type="text" id="wFaceJob" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">مكان العمل في التعليم الوجاهي - غير الرسمي </label>
+                    <input type="text" id="wFacePlace" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-gray-600 mb-1">منطقة العمل في التعليم الوجاهي </label>
+                    <select id="wFaceArea" class="w-full border rounded-lg px-3 py-1.5 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                      <option value="East Gaza">East Gaza</option>
+                      <option value="East Middle">East Middle</option>
+                      <option value="West Khanyounis">West Khanyounis</option>
+                      <option value="South Gaza">South Gaza</option>
+                      <option value="Jabalia">Jabalia</option>
+                      <option value="West Gaza">West Gaza</option>
+                      <option value="West Middle">West Middle</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-gray-200">
+                  <label class="block font-bold text-gray-700 mb-1"><i class="fa-solid fa-comment-medical text-gray-400"></i> رابعاً: ملاحظات إضافية</label>
+                  <textarea id="wNotes" rows="2" class="w-full border rounded-lg p-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="ادخل ملاحظاتك..."></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t">
+                  <button type="button" onclick="toggleModal('editWorkStatusModal', false)" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold hover:bg-gray-300">إلغاء</button>
+                  <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-6 py-2 rounded-xl shadow transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> حفظ تعديلات حالة العمل
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
 
         <div id="tabApprovals" class="tab-content space-y-4 hidden">
@@ -702,6 +729,7 @@
           if(currentEmpRecord) {
             fillQuickCard(currentEmpRecord);
             renderPersonalInfoCards(currentEmpRecord);
+            renderWorkStatusCards(currentEmpRecord);
             fillWorkStatusForm(currentEmpRecord);
           }
           
@@ -930,6 +958,99 @@ function buildDynamicGovernorateOptions() {
       document.getElementById('lblHardcodedWhatsapp').innerText = r["WhatsApp No"] || "غير محدد";
     }
 
+
+    function renderWorkStatusCards(r) {
+      const makeValue = (val) => (val && val.toString().trim()) ? val : "غير محدد";
+      const statusBadge = (val, color) => {
+        const isYes = val === "نعم";
+        return `<span class="${isYes ? color : 'bg-gray-100 text-gray-500'} px-2 py-0.5 rounded-full text-[10px] font-bold">${isYes ? 'نعم' : 'لا'}</span>`;
+      };
+
+      const tracks = [
+        {
+          title: "نطاق العمل في الطوارئ",
+          icon: "fa-truck-medical",
+          border: "border-red-200",
+          head: "text-red-700",
+          bg: "bg-red-50",
+          badge: "bg-red-100 text-red-700",
+          working: r["Emergency Working"],
+          fields: [
+            { label: "هل يعمل حالياً؟", value: statusBadge(r["Emergency Working"], "bg-red-100 text-red-700"), isHtml: true },
+            { label: "المهنة / المسمى", value: r["Emergency Job"] },
+            { label: "مكان العمل", value: r["Emergency Workplace"] },
+            { label: "منطقة العمل", value: r["Emergency Area"] }
+          ]
+        },
+        {
+          title: "نطاق التعليم الإلكتروني",
+          icon: "fa-display",
+          border: "border-indigo-200",
+          head: "text-indigo-700",
+          bg: "bg-indigo-50",
+          badge: "bg-indigo-100 text-indigo-700",
+          working: r["Online Working"],
+          fields: [
+            { label: "هل يعمل حالياً؟", value: statusBadge(r["Online Working"], "bg-indigo-100 text-indigo-700"), isHtml: true },
+            { label: "المهنة / المسمى", value: r["Online Job"] },
+            { label: "مكان العمل", value: r["Online Workplace"] },
+            { label: "منطقة العمل", value: r["Online Area"] }
+          ]
+        },
+        {
+          title: "نطاق التعليم الوجاهي",
+          icon: "fa-graduation-cap",
+          border: "border-purple-200",
+          head: "text-purple-700",
+          bg: "bg-purple-50",
+          badge: "bg-purple-100 text-purple-700",
+          working: r["Face Working"],
+          fields: [
+            { label: "هل يعمل حالياً؟", value: statusBadge(r["Face Working"], "bg-purple-100 text-purple-700"), isHtml: true },
+            { label: "المهنة / المسمى", value: r["Face Job"] },
+            { label: "مكان العمل", value: r["Face Workplace"] },
+            { label: "منطقة العمل", value: r["Face Area"] }
+          ]
+        }
+      ];
+
+      const container = document.getElementById('cardsGridWorkStatus');
+      if (!container) return;
+
+      container.innerHTML = tracks.map(track => `
+        <div class="bg-white rounded-xl border ${track.border} shadow-sm overflow-hidden">
+          <div class="${track.bg} px-4 py-3 border-b ${track.border} flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <div class="bg-white p-2 rounded-lg ${track.head} shadow-sm">
+                <i class="fa-solid ${track.icon}"></i>
+              </div>
+              <h4 class="font-bold ${track.head} text-xs">${track.title}</h4>
+            </div>
+            ${statusBadge(track.working, track.badge)}
+          </div>
+          <div class="p-4 grid grid-cols-1 gap-3">
+            ${track.fields.map(f => `
+              <div class="bg-slate-50 rounded-lg border border-gray-100 p-3">
+                <span class="text-[10px] text-gray-400 block font-bold mb-1">${f.label}</span>
+                <span class="text-xs font-bold text-gray-700 block break-words">${f.isHtml ? f.value : makeValue(f.value)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+
+      const notesEl = document.getElementById('lblWorkNotes');
+      if (notesEl) notesEl.innerText = makeValue(r["Notes"]);
+    }
+
+    function openEditWorkStatusModal() {
+      let currentEmpRecord = allEmployeesData.find(e => e["Emp No"].toString().trim() === currentUser.empNo.toString().trim());
+      if(currentEmpRecord) {
+        fillWorkStatusForm(currentEmpRecord);
+      }
+      toggleModal('editWorkStatusModal', true);
+    }
+
     function fillWorkStatusForm(r) {
       if(r["Emergency Working"]) document.getElementById('wEmergWorking').value = r["Emergency Working"];
       document.getElementById('wEmergJob').value = r["Emergency Job"] || "";
@@ -1007,6 +1128,7 @@ function buildDynamicGovernorateOptions() {
         notes: document.getElementById('wNotes').value
       };
       
+      toggleModal('editWorkStatusModal', false);
       showLoader(true, "جاري ترحيل وحفظ مصفوفة مسارات العمل وتحديث السجل الموحد في الشيت...");
       
       apiCall("updateWork", { empNo: currentUser.empNo, data: dataObj })
