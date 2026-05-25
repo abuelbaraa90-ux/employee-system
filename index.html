@@ -709,7 +709,7 @@
     }
 
     function refreshSystemData() {
-      showLoader(true, "جاري سحب ومزامنة مصفوفة البيانات المحدثة من الشيت...");
+      showLoader(true, "جاري مزامنة البيانات...");
       apiCall("dashboard", { user: currentUser })
         .then(function(result) {
           showLoader(false);
