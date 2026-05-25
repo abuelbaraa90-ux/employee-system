@@ -583,6 +583,23 @@
     let filteredEmployeesData = [];
     let pendingUpdatesData = [];
 
+    function hasStatsAccess() {
+      const role = (currentUser && currentUser.role ? currentUser.role : "").toString().trim().toLowerCase();
+      return role === "admin" || role === "manager" || role === "آدمن" || role === "ادمن" || role === "مدير";
+    }
+
+    function applyStatsVisibility() {
+      const statsPanel = document.getElementById('statsPanel');
+      if (!statsPanel) return;
+
+      if (hasStatsAccess()) {
+        statsPanel.classList.remove('hidden');
+      } else {
+        statsPanel.classList.add('hidden');
+      }
+    }
+
+
   async function apiCall(action, payload = {}) {
 
     const response = await fetch(API_URL,{
@@ -679,32 +696,33 @@
       document.getElementById('frmLogin').reset();
       document.getElementById('loginPage').classList.remove('hidden');
       document.getElementById('mainDashboard').classList.add('hidden');
+      applyStatsVisibility();
       showToast("تم تسجيل خروج الحساب وآمان الجلسة الحالية.");
     }
 
     function initDashboard() {
       document.getElementById('loginPage').classList.add('hidden');
       document.getElementById('mainDashboard').classList.remove('hidden');
-      
+
       document.getElementById('lblUserHeaderName').innerText = currentUser.role === "Employee" ? "لوحة التحكم ومتابعة حالة العمل" : "لوحة التحكم ومتابعة حالة العمل";
       document.getElementById('lblUserHeaderRole').innerText = "الحساب: " + currentUser.role + " | النطاق المتاح: " + currentUser.area;
-      
+
+      applyStatsVisibility();
+
       if (currentUser.role === "Admin" || currentUser.role === "Manager") {
-        document.getElementById('statsPanel').classList.remove('hidden');
         document.getElementById('btn-tabReports').classList.remove('hidden');
         document.getElementById('btn-tabApprovals').classList.remove('hidden');
       } else {
-        document.getElementById('statsPanel').classList.add('hidden');
         document.getElementById('btn-tabReports').classList.add('hidden');
         document.getElementById('btn-tabApprovals').classList.add('hidden');
       }
-      
+
       if (currentUser.canExport) {
         document.getElementById('btnExportExcel').classList.remove('hidden');
       } else {
         document.getElementById('btnExportExcel').classList.add('hidden');
       }
-      
+
       refreshSystemData();
     }
 
@@ -716,7 +734,8 @@
           allEmployeesData = result.employeesList || [];
           filteredEmployeesData = [...allEmployeesData];
           
-          if (currentUser.role === "Admin" || currentUser.role === "Manager") {
+          if (hasStatsAccess()) {
+            applyStatsVisibility();
             document.getElementById('statTotal').innerText = result.stats.total;
             document.getElementById('statInside').innerText = result.stats.insideGaza;
             document.getElementById('statOutside').innerText = result.stats.outsideGaza;
