@@ -39,7 +39,7 @@
   <div id="globalLoader" class="fixed inset-0 bg-slate-900 bg-opacity-60 flex items-center justify-center z-50 hidden">
     <div class="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center max-w-xs w-full mx-4">
       <div class="custom-spinner mb-4"></div>
-      <p class="text-xs font-bold text-gray-600 text-center" id="loaderText">جاري الاتصال بقاعدة البيانات وحفظ مصفوفة العمل المستدامة...</p>
+      <p class="text-xs font-bold text-gray-600 text-center" id="loaderText">جاري الاتصال بقاعدة البيانات ...</p>
     </div>
   </div>
 
@@ -75,7 +75,7 @@
           <i class="fa-solid fa-shield-user"></i>
         </div>
         <h2 class="text-xl font-bold text-gray-800">منظومة متابعة الموظفين وحالة العمل</h2>
-        <p class="text-[11px] text-gray-400 mt-1">سجل دخولك لتعديل مسارات العمل واستعراض التقارير</p>
+        <p class="text-[11px] text-gray-400 mt-1">سجل دخولك لتعديل حالة العمل واستعراض التقارير</p>
       </div>
       
       <form id="frmLogin" onsubmit="handleLogin(event)" class="space-y-4 text-xs">
@@ -1129,12 +1129,12 @@ function buildDynamicGovernorateOptions() {
       };
       
       toggleModal('editWorkStatusModal', false);
-      showLoader(true, "جاري ترحيل وحفظ مصفوفة مسارات العمل وتحديث السجل الموحد في الشيت...");
+      showLoader(true, "جاري ترحيل وحفظ التعديلات...");
       
       apiCall("updateWork", { empNo: currentUser.empNo, data: dataObj })
         .then(function(res){
           if(res.success){
-            showToast("تم إرسال تعديل حالة العمل بانتظار اعتماد المدير/الأدمن.");
+            showToast("تم إرسال تعديل حالة العمل بانتظار اعتماد المدير.");
             refreshSystemData();
           } else {
             showLoader(false);
@@ -1143,7 +1143,7 @@ function buildDynamicGovernorateOptions() {
         })
         .catch(function(err){
           showLoader(false);
-          showToast("فشل حفظ وتحديث مصفوفة مسارات العمل: " + err.message, false);
+          showToast("فشل حفظ وتحديث مصفوفة حالة العمل: " + err.message, false);
         });
     }
 
@@ -1381,12 +1381,12 @@ function buildDynamicGovernorateOptions() {
     }
 
     function approveRequest(requestId) {
-      showLoader(true, "جاري اعتماد طلب التعديل وتطبيقه على البيانات الأصلية...");
+      showLoader(true, "جاري اعتماد طلب التعديل ...");
       apiCall("approvePending", { requestId: requestId, reviewerEmpNo: currentUser.empNo })
         .then(function(res){
           showLoader(false);
           if (res.success) {
-            showToast("تم اعتماد طلب التعديل وتطبيقه بنجاح.");
+            showToast("تم اعتماد طلب التعديل.");
             refreshSystemData();
           } else {
             showToast(res.message, false);
